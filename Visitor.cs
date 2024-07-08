@@ -13,6 +13,9 @@ interface Visitor<R> {
     R visit_var_stmt(VarStmt varStmt);
     R visit_assign_expr(AssignExpr assignExpr);
     R visit_program(Program program);
+    R visit_if_stmt(IfStmt ifStmt);
+    R visit_block_stmt(BlockStmt blockStmt);
+    R visit_while_stmt(WhileStmt whileStmt);
 }
 
 class AstPrinter : Visitor<StringBuilder> {
@@ -102,6 +105,43 @@ class AstPrinter : Visitor<StringBuilder> {
         foreach (Stmt stmt in program.statements) {
             builder.Append(stmt.accept(this));
         }
+        return builder;
+    }
+
+    public StringBuilder visit_if_stmt(IfStmt ifStmt) {
+        StringBuilder builder = new();
+        builder.Append("if (")
+            .Append(ifStmt.condition.accept(this))
+            .Append(") ")
+            .AppendLine()
+            .Append('\t')
+            .Append(ifStmt.then_branch.accept(this))
+            .AppendLine();
+        if (ifStmt.else_branch != null) {
+            builder.AppendLine(" else ")
+                .Append(ifStmt.else_branch.accept(this))
+                .AppendLine();
+        }
+        return builder;
+    }
+
+    public StringBuilder visit_block_stmt(BlockStmt blockStmt) {
+        StringBuilder builder = new();
+        builder.AppendLine("{");
+        foreach (Stmt stmt in blockStmt.statements) {
+            builder.Append('\t').Append(stmt.accept(this));
+        }
+        builder.AppendLine("}");
+        return builder;
+    }
+
+    public StringBuilder visit_while_stmt(WhileStmt whileStmt) {
+        StringBuilder builder = new();
+        builder.Append("while (")
+            .Append(whileStmt.condition.accept(this))
+            .Append(") {")
+            .Append(whileStmt.body.accept(this))
+            .AppendLine("}");
         return builder;
     }
 }

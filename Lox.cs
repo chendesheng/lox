@@ -36,7 +36,7 @@
         Parser parser = new(tokens);
         Program program = parser.parse();
         if (_has_error) return;
-        // Console.WriteLine(AstPrinter.print(program));
+        Console.WriteLine(AstPrinter.print(program));
         _interpreter.interpret(program);
     }
 

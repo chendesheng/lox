@@ -153,6 +153,29 @@ class Interperter : Visitor<object?> {
         }
         return null;
     }
+
+    public object? visit_if_stmt(IfStmt if_stmt) {
+        if (is_truthy(evaluate(if_stmt.condition))) {
+            evaluate(if_stmt.then_branch);
+        } else if (if_stmt.else_branch != null) {
+            evaluate(if_stmt.else_branch);
+        }
+        return null;
+    }
+
+    public object? visit_block_stmt(BlockStmt block) {
+        foreach (Stmt statement in block.statements) {
+            evaluate(statement);
+        }
+        return null;
+    }
+
+    public object? visit_while_stmt(WhileStmt whileStmt) {
+        while (is_truthy(evaluate(whileStmt.condition))) {
+            evaluate(whileStmt.body);
+        }
+        return null;
+    }
 }
 
 class RuntimeErrorException(Token token, string message) : Exception(message) {

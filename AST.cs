@@ -66,6 +66,33 @@ class ExpressionStmt(Expr expression) : Stmt {
     }
 }
 
+class BlockStmt(List<Stmt> statements) : Stmt {
+    public readonly List<Stmt> statements = statements;
+
+    public override R accept<R>(Visitor<R> visitor) {
+        return visitor.visit_block_stmt(this);
+    }
+}
+
+class IfStmt(Expr condition, Stmt then_branch, Stmt? else_branch) : Stmt {
+    public readonly Expr condition = condition;
+    public readonly Stmt then_branch = then_branch;
+    public readonly Stmt? else_branch = else_branch;
+
+    public override R accept<R>(Visitor<R> visitor) {
+        return visitor.visit_if_stmt(this);
+    }
+}
+
+class WhileStmt(Expr condition, Stmt body) : Stmt {
+    public readonly Expr condition = condition;
+    public readonly Stmt body = body;
+
+    public override R accept<R>(Visitor<R> visitor) {
+        return visitor.visit_while_stmt(this);
+    }
+}
+
 class PrintStmt(Expr expression) : Stmt {
     public readonly Expr expression = expression;
 

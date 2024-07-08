@@ -12,7 +12,10 @@
 // program        → declaration* EOF ;
 // declaration    → varDecl | statement ;
 // varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
-// statement      → exprStmt | printStmt ;
+// statement      → exprStmt | ifStmt | whileStmt | printStmt | block ;
+// ifStmt         → "if" "(" expression ")" statement ( "else" statement )? ;
+// whileStmt      → "while" "(" expression ")" statement ;
+// block          → "{" declaration* "}" ;
 // exprStmt       → expression ";" ;
 // printStmt      → "print" expression ";" ;
 class Parser(List<Token> tokens) {
@@ -50,7 +53,10 @@ class Parser(List<Token> tokens) {
     }
 
     private Stmt statement() {
+        if (match(TokenType.IF)) return if_statement();
+        if (match(TokenType.WHILE)) return while_statement();
         if (match(TokenType.PRINT)) return print_statement();
+        if (match(TokenType.LEFT_BRACE)) return block();
         return expression_statement();
     }
 
@@ -58,6 +64,40 @@ class Parser(List<Token> tokens) {
         Expr expr = expression();
         consume(TokenType.SEMICOLON, "Expect ';' after expression.");
         return new ExpressionStmt(expr);
+    }
+
+    private IfStmt if_statement() {
+        consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.");
+        Expr condition = expression();
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after if condition.");
+
+        Stmt then_branch = statement();
+        Stmt? else_branch = null;
+        if (match(TokenType.ELSE)) {
+            else_branch = statement();
+        }
+
+        return new IfStmt(condition, then_branch, else_branch);
+    }
+
+    private WhileStmt while_statement() {
+        consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.");
+        Expr condition = expression();
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after while condition.");
+
+        Stmt body = statement();
+        return new WhileStmt(condition, body);
+    }
+
+    private BlockStmt block() {
+        List<Stmt> statements = [];
+
+        while (!check(TokenType.RIGHT_BRACE) && !is_at_end()) {
+            statements.Add(declaration());
+        }
+
+        consume(TokenType.RIGHT_BRACE, "Expect '}' after block.");
+        return new BlockStmt(statements);
     }
 
     private PrintStmt print_statement() {
