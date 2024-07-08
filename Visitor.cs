@@ -13,11 +13,14 @@ interface Visitor<R> {
     R visit_var_stmt(VarStmt varStmt);
     R visit_assign_expr(AssignExpr assignExpr);
     R visit_program(Program program);
+    R visit_logical_expr(LogicalExpr logicalExpr);
     R visit_if_stmt(IfStmt ifStmt);
     R visit_block_stmt(BlockStmt blockStmt);
     R visit_while_stmt(WhileStmt whileStmt);
     R visit_for_stmt(ForStmt forStmt);
-    R visit_logical_expr(LogicalExpr logicalExpr);
+    R visit_function_stmt(FunctionStmt functionStmt);
+    R visit_call_expr(CallExpr callExpr);
+    R visit_return_stmt(ReturnStmt returnStmt);
 }
 
 class AstPrinter : Visitor<StringBuilder> {
@@ -163,5 +166,49 @@ class AstPrinter : Visitor<StringBuilder> {
 
     public StringBuilder visit_logical_expr(LogicalExpr logicalExpr) {
         return parenthesize(logicalExpr.op.lexeme, logicalExpr.left, logicalExpr.right);
+    }
+
+    public StringBuilder visit_function_stmt(FunctionStmt functionStmt) {
+        StringBuilder builder = new();
+        builder.Append("fun ")
+            .Append(functionStmt.name.lexeme)
+            .Append('(');
+        foreach (Token param in functionStmt.parameters) {
+            builder.Append(param.lexeme).Append(", ");
+        }
+        if (functionStmt.parameters.Count > 0) {
+            builder.Length -= 2;
+        }
+        builder.Append(") {");
+        foreach (Stmt stmt in functionStmt.body) {
+            builder.Append(stmt.accept(this));
+        }
+        builder.AppendLine("}");
+        return builder;
+    }
+
+    public StringBuilder visit_call_expr(CallExpr callExpr) {
+        StringBuilder builder = new();
+        builder.Append(callExpr.callee.accept(this))
+            .Append('(');
+        foreach (Expr arg in callExpr.arguments) {
+            builder.Append(arg.accept(this)).Append(", ");
+        }
+        if (callExpr.arguments.Count > 0) {
+            builder.Length -= 2;
+        }
+        builder.Append(')');
+        return builder;
+    }
+
+    public StringBuilder visit_return_stmt(ReturnStmt returnStmt) {
+        StringBuilder builder = new();
+        builder.Append("return");
+        if (returnStmt.value != null) {
+            builder.Append(' ');
+            builder.Append(returnStmt.value.accept(this));
+        }
+        builder.AppendLine(";");
+        return builder;
     }
 }

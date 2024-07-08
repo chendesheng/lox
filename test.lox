@@ -15,9 +15,19 @@ while (i < 10) {
   i = i + 1;
 }
 
-for (var j = 1; j < 1000; j = j * 2) {
-  print j;
-}
-
 print "hi" or 2;
 print nil or "hello";
+
+var j = 0;
+
+fun test() {
+  for (var j = 1; j < 1000; j = j * 2) {
+    print j;
+    if (j == 64) {
+      return;
+    }
+  }
+}
+
+test();
+print j;

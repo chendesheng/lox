@@ -56,6 +56,16 @@ class UnaryExpr(Token op, Expr right) : Expr {
     }
 }
 
+class CallExpr(Expr callee, Token paren, List<Expr> arguments) : Expr {
+    public readonly Expr callee = callee;
+    public readonly Token paren = paren;
+    public readonly List<Expr> arguments = arguments;
+
+    public override R accept<R>(Visitor<R> visitor) {
+        return visitor.visit_call_expr(this);
+    }
+}
+
 class VariableExpr(Token name) : Expr {
     public readonly Token name = name;
 
@@ -128,6 +138,25 @@ class VarStmt(Token name, Expr? initializer) : Stmt {
 
     public override R accept<R>(Visitor<R> visitor) {
         return visitor.visit_var_stmt(this);
+    }
+}
+
+class FunctionStmt(Token name, List<Token> parameters, List<Stmt> body) : Stmt {
+    public readonly Token name = name;
+    public readonly List<Token> parameters = parameters;
+    public readonly List<Stmt> body = body;
+
+    public override R accept<R>(Visitor<R> visitor) {
+        return visitor.visit_function_stmt(this);
+    }
+}
+
+class ReturnStmt(Token keyword, Expr? value) : Stmt {
+    public readonly Token keyword = keyword;
+    public readonly Expr? value = value;
+
+    public override R accept<R>(Visitor<R> visitor) {
+        return visitor.visit_return_stmt(this);
     }
 }
 

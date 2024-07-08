@@ -1,7 +1,7 @@
 ﻿class Lox {
     static private bool _has_error = false;
     static private bool _has_runtime_error = false;
-    static readonly Interperter _interpreter = new();
+    static readonly Interpreter _interpreter = new();
 
     static void Main(string[] args) {
         if (args.Length > 1) {

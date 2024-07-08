@@ -1,6 +1,11 @@
 
-class Interperter : Visitor<object?> {
-    private readonly Env _env = new();
+class Interpreter : Visitor<object?> {
+    public readonly Env globals = new();
+    private Env _env;
+
+    public Interpreter() {
+        _env = globals;
+    }
 
     private object? evaluate(Expr expr) {
         return expr.accept(this);
@@ -45,8 +50,8 @@ class Interperter : Visitor<object?> {
     public void interpret(Program program) {
         try {
             List<Stmt> statements = program.statements;
-            for (int i = 0; i < statements.Count; i++) {
-                evaluate(statements[i]);
+            foreach (Stmt statement in statements) {
+                evaluate(statement);
             }
         }
         catch (RuntimeErrorException e) {
@@ -199,8 +204,54 @@ class Interperter : Visitor<object?> {
         }
         return evaluate(logicalExpr.right);
     }
+
+    public object? visit_function_stmt(FunctionStmt stmt) {
+        var fun = new LoxFunction(stmt, _env);
+        _env.define(stmt.name.lexeme, fun);
+        return null;
+    }
+
+    public void execute_block(List<Stmt> body, Env env) {
+        var previous_env = _env;
+        try {
+            _env = env;
+            foreach (Stmt statement in body) {
+                evaluate(statement);
+            }
+        } finally {
+            _env = previous_env;
+        }
+    }
+
+    public object? visit_call_expr(CallExpr callExpr) {
+        object? callee = evaluate(callExpr.callee);
+        List<object?> arguments = [];
+        foreach (Expr argument in callExpr.arguments) {
+            arguments.Add(evaluate(argument));
+        }
+        if (callee is not LoxCallable) {
+            throw new RuntimeErrorException(callExpr.paren, "Can only call functions and classes.");
+        }
+        LoxCallable function = (LoxCallable)callee;
+        if (arguments.Count != function.arity()) {
+            throw new RuntimeErrorException(callExpr.paren, $"Expected {function.arity()} arguments but got {arguments.Count}.");
+        }
+        return function.call(this, arguments);
+    }
+
+    public object? visit_return_stmt(ReturnStmt returnStmt) {
+        object? value = null;
+        if (returnStmt.value != null) {
+            value = evaluate(returnStmt.value);
+        }
+        throw new ReturnException(value);
+    }
 }
 
 class RuntimeErrorException(Token token, string message) : Exception(message) {
     public readonly Token token = token;
+}
+
+class ReturnException(object? value) : Exception {
+    public readonly object? value = value;
 }

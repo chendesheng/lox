@@ -8,19 +8,25 @@
 // comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
 // term           → factor ( ( "-" | "+" ) factor )* ;
 // factor         → unary ( ( "/" | "*" ) unary )* ;
-// unary          → ( "!" | "-" ) unary | primary ;
+// unary          → ( "!" | "-" ) unary | call ;
+// call           → primary ( "(" arguments? ")" )* ;
+// arguments      → expression ( "," expression )* ;
 // primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER ;
 
 // program        → declaration* EOF ;
-// declaration    → varDecl | statement ;
+// declaration    → funDecl | varDecl | statement ;
+// funDecl        → "fun" function ;
+// function       → IDENTIFIER "(" parameters? ")" block ;
+// parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
 // varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
-// statement      → exprStmt | forStmt | ifStmt | whileStmt | printStmt | block ;
+// statement      → exprStmt | forStmt | ifStmt | whileStmt | printStmt | returnStmt | block ;
 // forStmt        → "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
 // ifStmt         → "if" "(" expression ")" statement ( "else" statement )? ;
 // whileStmt      → "while" "(" expression ")" statement ;
 // block          → "{" declaration* "}" ;
 // exprStmt       → expression ";" ;
 // printStmt      → "print" expression ";" ;
+// returnStmt     → "return" expression? ";" ;
 class Parser(List<Token> tokens) {
     private readonly List<Token> _tokens = tokens;
     private int _current = 0;
@@ -35,12 +41,33 @@ class Parser(List<Token> tokens) {
 
     private Stmt declaration() {
         try {
+            if (match(TokenType.FUN)) return function("function");
             if (match(TokenType.VAR)) return var_declaration();
             return statement();
         } catch (ParseErrorException) {
             synchronize();
             return null!;
         }
+    }
+
+    private FunctionStmt function(string kind) {
+        Token name = consume(TokenType.IDENTIFIER, $"Expect {kind} name.");
+        consume(TokenType.LEFT_PAREN, $"Expect '(' after {kind} name.");
+
+        List<Token> parameters = [];
+        if (!check(TokenType.RIGHT_PAREN)) {
+            do {
+                if (parameters.Count >= 255) {
+                    throw parse_error(peek(), "Cannot have more than 255 parameters.");
+                }
+                parameters.Add(consume(TokenType.IDENTIFIER, "Expect parameter name."));
+            } while (match(TokenType.COMMA));
+        }
+
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.");
+        consume(TokenType.LEFT_BRACE, $"Expect '{{' before {kind} body.");
+        List<Stmt> body = block().statements;
+        return new FunctionStmt(name, parameters, body);
     }
 
     private VarStmt var_declaration() {
@@ -59,9 +86,21 @@ class Parser(List<Token> tokens) {
         if (match(TokenType.IF)) return if_statement();
         if (match(TokenType.FOR)) return for_statement();
         if (match(TokenType.WHILE)) return while_statement();
+        if (match(TokenType.RETURN)) return return_statement();
         if (match(TokenType.PRINT)) return print_statement();
         if (match(TokenType.LEFT_BRACE)) return block();
         return expression_statement();
+    }
+
+    private ReturnStmt return_statement() {
+        Token keyword = previous();
+        Expr? value = null;
+        if (!check(TokenType.SEMICOLON)) {
+            value = expression();
+        }
+
+        consume(TokenType.SEMICOLON, "Expect ';' after return value.");
+        return new ReturnStmt(keyword, value);
     }
 
     private ExpressionStmt expression_statement() {
@@ -251,7 +290,38 @@ class Parser(List<Token> tokens) {
             return new UnaryExpr(op, right);
         }
 
-        return primary();
+        return call();
+    }
+
+    private Expr call() {
+        Expr expr = primary();
+
+        while (true) {
+            if (match(TokenType.LEFT_PAREN)) {
+                expr = finish_call(expr);
+            } else {
+                break;
+            }
+        }
+
+        return expr;
+    }
+
+    private CallExpr finish_call(Expr callee) {
+        List<Expr> arguments = [];
+
+        if (!check(TokenType.RIGHT_PAREN)) {
+            do {
+                if (arguments.Count >= 255) {
+                    throw parse_error(peek(), "Cannot have more than 255 arguments.");
+                }
+                arguments.Add(expression());
+            } while (match(TokenType.COMMA));
+        }
+
+        Token paren = consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.");
+
+        return new CallExpr(callee, paren, arguments);
     }
 
     private Expr primary() {
