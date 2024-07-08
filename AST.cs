@@ -37,6 +37,16 @@ class LiteralExpr(object? value) : Expr {
     }
 }
 
+class LogicalExpr(Expr left, Token op, Expr right) : Expr {
+    public readonly Expr left = left;
+    public readonly Token op = op;
+    public readonly Expr right = right;
+
+    public override R accept<R>(Visitor<R> visitor) {
+        return visitor.visit_logical_expr(this);
+    }
+}
+
 class UnaryExpr(Token op, Expr right) : Expr {
     public readonly Token op = op;
     public readonly Expr right = right;

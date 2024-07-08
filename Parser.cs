@@ -1,7 +1,9 @@
 
 
 // expression     → assignment ;
-// assignment     → IDENTIFIER "=" assignment | equality ;
+// assignment     → IDENTIFIER "=" assignment | logic_or ;
+// logic_or       → logic_and ( "or" logic_and )* ;
+// logic_and      → equality ( "and" equality )*
 // equality       → comparison ( ( "!=" | "==" ) comparison )* ;
 // comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
 // term           → factor ( ( "-" | "+" ) factor )* ;
@@ -153,7 +155,7 @@ class Parser(List<Token> tokens) {
     }
 
     private Expr assignment() {
-        Expr expr = equality();
+        Expr expr = or_expr();
 
         if (match(TokenType.EQUAL)) {
             Token equals = previous();
@@ -165,6 +167,30 @@ class Parser(List<Token> tokens) {
             }
 
             throw parse_error(equals, "Invalid assignment target.");
+        }
+
+        return expr;
+    }
+
+    private Expr or_expr() {
+        Expr expr = and_expr();
+
+        while (match(TokenType.OR)) {
+            Token op = previous();
+            Expr right = and_expr();
+            expr = new LogicalExpr(expr, op, right);
+        }
+
+        return expr;
+    }
+
+    private Expr and_expr() {
+        Expr expr = equality();
+
+        while (match(TokenType.AND)) {
+            Token op = previous();
+            Expr right = equality();
+            expr = new LogicalExpr(expr, op, right);
         }
 
         return expr;

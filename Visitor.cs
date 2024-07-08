@@ -17,6 +17,7 @@ interface Visitor<R> {
     R visit_block_stmt(BlockStmt blockStmt);
     R visit_while_stmt(WhileStmt whileStmt);
     R visit_for_stmt(ForStmt forStmt);
+    R visit_logical_expr(LogicalExpr logicalExpr);
 }
 
 class AstPrinter : Visitor<StringBuilder> {
@@ -158,5 +159,9 @@ class AstPrinter : Visitor<StringBuilder> {
             .Append(forStmt.body.accept(this))
             .AppendLine("}");
         return builder;
+    }
+
+    public StringBuilder visit_logical_expr(LogicalExpr logicalExpr) {
+        return parenthesize(logicalExpr.op.lexeme, logicalExpr.left, logicalExpr.right);
     }
 }

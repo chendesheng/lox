@@ -189,6 +189,16 @@ class Interperter : Visitor<object?> {
         }
         return null;
     }
+
+    public object? visit_logical_expr(LogicalExpr logicalExpr) {
+        object? left = evaluate(logicalExpr.left);
+        if (logicalExpr.op.type == TokenType.OR) {
+            if (is_truthy(left)) return left;
+        } else {
+            if (!is_truthy(left)) return left;
+        }
+        return evaluate(logicalExpr.right);
+    }
 }
 
 class RuntimeErrorException(Token token, string message) : Exception(message) {
