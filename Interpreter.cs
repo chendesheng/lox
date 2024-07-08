@@ -170,9 +170,22 @@ class Interperter : Visitor<object?> {
         return null;
     }
 
-    public object? visit_while_stmt(WhileStmt whileStmt) {
-        while (is_truthy(evaluate(whileStmt.condition))) {
-            evaluate(whileStmt.body);
+    public object? visit_while_stmt(WhileStmt while_stmt) {
+        while (is_truthy(evaluate(while_stmt.condition))) {
+            evaluate(while_stmt.body);
+        }
+        return null;
+    }
+
+    public object? visit_for_stmt(ForStmt for_stmt) {
+        if (for_stmt.initializer != null) {
+            evaluate(for_stmt.initializer);
+        }
+        while (for_stmt.condition == null || is_truthy(evaluate(for_stmt.condition))) {
+            evaluate(for_stmt.body);
+            if (for_stmt.increment != null) {
+                evaluate(for_stmt.increment);
+            }
         }
         return null;
     }

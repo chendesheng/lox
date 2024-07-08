@@ -14,3 +14,7 @@ while (i < 10) {
   print i;
   i = i + 1;
 }
+
+for (var j = 1; j < 1000; j = j * 2) {
+  print j;
+}

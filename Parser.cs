@@ -12,7 +12,8 @@
 // program        → declaration* EOF ;
 // declaration    → varDecl | statement ;
 // varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
-// statement      → exprStmt | ifStmt | whileStmt | printStmt | block ;
+// statement      → exprStmt | forStmt | ifStmt | whileStmt | printStmt | block ;
+// forStmt        → "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
 // ifStmt         → "if" "(" expression ")" statement ( "else" statement )? ;
 // whileStmt      → "while" "(" expression ")" statement ;
 // block          → "{" declaration* "}" ;
@@ -54,6 +55,7 @@ class Parser(List<Token> tokens) {
 
     private Stmt statement() {
         if (match(TokenType.IF)) return if_statement();
+        if (match(TokenType.FOR)) return for_statement();
         if (match(TokenType.WHILE)) return while_statement();
         if (match(TokenType.PRINT)) return print_statement();
         if (match(TokenType.LEFT_BRACE)) return block();
@@ -78,6 +80,46 @@ class Parser(List<Token> tokens) {
         }
 
         return new IfStmt(condition, then_branch, else_branch);
+    }
+
+    private ForStmt for_statement() {
+        consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.");
+
+        Stmt initializer;
+        if (match(TokenType.SEMICOLON)) {
+            initializer = null!;
+        } else if (match(TokenType.VAR)) {
+            initializer = var_declaration();
+        } else {
+            initializer = expression_statement();
+        }
+
+        Expr? condition = null;
+        if (!check(TokenType.SEMICOLON)) {
+            condition = expression();
+        }
+        consume(TokenType.SEMICOLON, "Expect ';' after loop condition.");
+
+        Expr? increment = null;
+        if (!check(TokenType.RIGHT_PAREN)) {
+            increment = expression();
+        }
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.");
+
+        Stmt body = statement();
+
+        if (increment != null) {
+            body = new BlockStmt(new List<Stmt> { body, new ExpressionStmt(increment) });
+        }
+
+        condition ??= new LiteralExpr(true);
+        body = new WhileStmt(condition, body);
+
+        if (initializer != null) {
+            body = new BlockStmt([initializer, body]);
+        }
+
+        return new ForStmt(initializer, condition, increment, body);
     }
 
     private WhileStmt while_statement() {

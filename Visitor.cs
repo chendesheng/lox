@@ -16,6 +16,7 @@ interface Visitor<R> {
     R visit_if_stmt(IfStmt ifStmt);
     R visit_block_stmt(BlockStmt blockStmt);
     R visit_while_stmt(WhileStmt whileStmt);
+    R visit_for_stmt(ForStmt forStmt);
 }
 
 class AstPrinter : Visitor<StringBuilder> {
@@ -141,6 +142,20 @@ class AstPrinter : Visitor<StringBuilder> {
             .Append(whileStmt.condition.accept(this))
             .Append(") {")
             .Append(whileStmt.body.accept(this))
+            .AppendLine("}");
+        return builder;
+    }
+
+    public StringBuilder visit_for_stmt(ForStmt forStmt) {
+        StringBuilder builder = new();
+        builder.Append("for (")
+            .Append(forStmt.initializer?.accept(this) ?? new())
+            .Append("; ")
+            .Append(forStmt.condition?.accept(this) ?? new())
+            .Append("; ")
+            .Append(forStmt.increment?.accept(this) ?? new())
+            .Append(") {")
+            .Append(forStmt.body.accept(this))
             .AppendLine("}");
         return builder;
     }

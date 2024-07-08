@@ -74,6 +74,17 @@ class BlockStmt(List<Stmt> statements) : Stmt {
     }
 }
 
+class ForStmt(Stmt? initializer, Expr? condition, Expr? increment, Stmt body) : Stmt {
+    public readonly Stmt? initializer = initializer;
+    public readonly Expr? condition = condition;
+    public readonly Expr? increment = increment;
+    public readonly Stmt body = body;
+
+    public override R accept<R>(Visitor<R> visitor) {
+        return visitor.visit_for_stmt(this);
+    }
+}
+
 class IfStmt(Expr condition, Stmt then_branch, Stmt? else_branch) : Stmt {
     public readonly Expr condition = condition;
     public readonly Stmt then_branch = then_branch;
