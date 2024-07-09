@@ -5,6 +5,7 @@ class Interpreter : Visitor<object?> {
 
     public Interpreter() {
         _env = globals;
+        globals.define("clock", new ClockFunction());
     }
 
     private object? evaluate(Expr expr) {

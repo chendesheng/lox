@@ -31,3 +31,5 @@ fun test() {
 
 test();
 print j;
+
+print clock();
